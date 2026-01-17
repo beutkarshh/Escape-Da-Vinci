@@ -1,0 +1,182 @@
+{
+  "symptoms": "severe chest pain, shortness of breath, sweating",
+  "age": 55,
+  "gender": "male",
+  "medicalHistory": "hypertension, diabetes",
+  "currentMedications": "lisinopril, metformin",
+  "urgency": "high",
+  "symptom_analysis": {
+    "top_differentials": [
+      {
+        "name": "Acute Myocardial Infarction",
+        "rationale": "The patient presents with severe chest pain, shortness of breath, and sweating, which are classic symptoms of an acute myocardial infarction, especially given his age and medical history of hypertension and diabetes.",
+        "icd10cm_code": "I21.9"
+      },
+      {
+        "name": "Pulmonary Embolism",
+        "rationale": "The combination of chest pain and shortness of breath could also indicate a pulmonary embolism, particularly in a patient with risk factors such as obesity or prolonged immobility, which are common in patients with diabetes.",
+        "icd10cm_code": "I26.9"
+      },
+      {
+        "name": "Aortic Dissection",
+        "rationale": "Severe chest pain that may radiate to the back, along with shortness of breath, could suggest an aortic dissection, particularly in a hypertensive male patient.",
+        "icd10cm_code": "I71.0"
+      }
+    ],
+    "risk_level": "high",
+    "disclaimer": "This is AI-generated and not medical advice."
+  },
+  "diagnosis": "Acute Myocardial Infarction",
+  "literature": {
+    "query": "Acute Myocardial Infarction AND age 55",
+    "articles": {
+      "summaries": [
+        {
+          "pmid": "41545295",
+          "title": "Prognostic value of N-terminal pro-B-type natriuretic peptide and C reactive protein testing in patients with acute ST-segment elevation myocardial infarction.",
+          "summary": "This study evaluated NT-proBNP and CRP as mortality predictors in 566 acute STEMI patients. NT-proBNP was linked to mortality regardless of LVEF, while CRP was significant only in LVEF <50%. After 39 months, all-cause mortality was 13.4%. NT-proBNP improved risk stratification compared to LVEF alone, indicating its prognostic value in mid-term mortality assessment."
+        },
+        {
+          "pmid": "41545258",
+          "title": "Cine Images Derived-Radiomic for the Prediction of Event Free Survival in Patients With ST-Segment Elevation Myocardial Infarction.",
+          "summary": "This study assessed radiomic features from cine CMR in 440 STEMI patients. A radiomics-based risk score (RAD score) showed superior prognostic value over clinical models in predicting major adverse cardiovascular events (MACE) during a 2.9-year follow-up. The RAD score remained independently associated with MACE, supporting its use for individualized risk stratification after STEMI."
+        },
+        {
+          "pmid": "41541956",
+          "title": "Clinical, Angiographic, and Procedural Characteristics of Patients Undergoing Percutaneous Coronary Intervention: A Single-Center Study From Northeast India.",
+          "summary": "This study analyzed 150 patients undergoing PCI in Northeast India, revealing a mean age of 55 years, with 90% male. Common risk factors included hypertension and dyslipidemia. Most patients presented with acute coronary syndrome. PCI was largely successful, with a low complication rate (18%). The left anterior descending artery was frequently involved, indicating a need for broader studies to confirm findings."
+        }
+      ]
+    },
+    "patient_context": {
+      "age": "55",
+      "gender": "male",
+      "medical_history": "hypertension, diabetes",
+      "current_medications": "lisinopril, metformin"
+    },
+    "disclaimer": "These references are from PubMed and AI-summarized; verify with a professional."
+  },
+  "case_matcher": {
+    "query": "Acute Myocardial Infarction",
+    "matched_cases": [
+      {
+        "icd_code": "SNOMEDCT:57054005",
+        "name": "Acute myocardial infarction",
+        "description": "AMI - Acute myocardial infarction",
+        "match_score": 95.0
+      },
+      {
+        "icd_code": "ICD10CM:I21",
+        "name": "Acute myocardial infarction",
+        "description": "infarction of heart, myocardium, or ventricle",
+        "match_score": 90.0
+      },
+      {
+        "icd_code": "SNOMEDCT:52035003",
+        "name": "Acute anteroapical myocardial infarction",
+        "description": "Acute anteroapical infarction",
+        "match_score": 82.5
+      }
+    ],
+    "patient_context": {
+      "age": "55",
+      "gender": "male",
+      "medical_history": "hypertension, diabetes"
+    },
+    "disclaimer": "Ontology matches are retrieved via BioPortal (ICD/SNOMED/MeSH) and AI-refined. Verify clinically."
+  },
+  "treatment": {
+    "query": "Acute Myocardial Infarction",
+    "treatments": [
+      {
+        "name": "Aspirin",
+        "class": "Antiplatelet",
+        "type": "drug",
+        "rationale": "Aspirin is recommended to reduce mortality in acute myocardial infarction by inhibiting platelet aggregation.",
+        "source": "Clinical Guidelines"
+      },
+      {
+        "name": "Clopidogrel",
+        "class": "Antiplatelet",
+        "type": "drug",
+        "rationale": "Clopidogrel is used in combination with aspirin for dual antiplatelet therapy to further reduce the risk of thrombotic events.",
+        "source": "Clinical Guidelines"
+      },
+      {
+        "name": "Beta-blockers (e.g., Metoprolol)",
+        "class": "Beta-adrenergic antagonist",
+        "type": "drug",
+        "rationale": "Beta-blockers reduce myocardial oxygen demand and improve survival in patients post-myocardial infarction.",
+        "source": "Clinical Guidelines"
+      },
+      {
+        "name": "ACE Inhibitors (e.g., Lisinopril)",
+        "class": "Antihypertensive",
+        "type": "drug",
+        "rationale": "ACE inhibitors are beneficial for patients with hypertension and heart failure post-MI, and the patient is already on Lisinopril.",
+        "source": "Clinical Guidelines"
+      },
+      {
+        "name": "Cardiac Rehabilitation",
+        "class": "Non-drug intervention",
+        "type": "non-drug",
+        "rationale": "Structured cardiac rehabilitation programs improve outcomes and quality of life post-MI through supervised exercise and education.",
+        "source": "American Association of Cardiovascular and Pulmonary Rehabilitation"
+      },
+      {
+        "name": "Dietary Modifications",
+        "class": "Non-drug intervention",
+        "type": "non-drug",
+        "rationale": "A heart-healthy diet can help manage diabetes and hypertension, reducing cardiovascular risk.",
+        "source": "American Heart Association Guidelines"
+      },
+      {
+        "name": "Smoking Cessation Support",
+        "class": "Non-drug intervention",
+        "type": "non-drug",
+        "rationale": "If the patient smokes, cessation is crucial to reduce the risk of further cardiovascular events.",
+        "source": "Centers for Disease Control and Prevention"
+      }
+    ],
+    "patient_context": {
+      "age": 55,
+      "gender": "male",
+      "medical_history": "hypertension, diabetes",
+      "current_medications": "lisinopril, metformin"
+    },
+    "disclaimer": "AI-generated treatment recommendations. External drug databases may be unavailable. Always verify with clinical guidelines and licensed healthcare providers."
+  },
+  "summary": {
+    "patient_summary": "A 55-year-old male with a history of hypertension and diabetes presents with severe chest pain, shortness of breath, and sweating. These symptoms suggest a high likelihood of an acute myocardial infarction (AMI), necessitating immediate medical attention.",
+    "clinical_summary": "The leading differential diagnosis is Acute Myocardial Infarction (ICD10CM: I21.9), supported by the patient's presentation of severe chest pain, dyspnea, and diaphoresis. Other differentials include Pulmonary Embolism (ICD10CM: I26.9) and Aortic Dissection (ICD10CM: I71.0), which should also be considered due to the patient's risk factors. Immediate intervention is critical given the high risk of morbidity and mortality associated with AMI.",
+    "recommendations": [
+      {
+        "type": "next_steps",
+        "content": "Administer aspirin and clopidogrel for antiplatelet therapy."
+      },
+      {
+        "type": "next_steps",
+        "content": "Initiate beta-blocker therapy (e.g., Metoprolol) to reduce myocardial oxygen demand."
+      },
+      {
+        "type": "next_steps",
+        "content": "Perform an ECG and cardiac biomarkers to confirm AMI."
+      },
+      {
+        "type": "next_steps",
+        "content": "Consider urgent referral for coronary angiography."
+      }
+    ],
+    "citations": {
+      "pmids": [
+        "41545295",
+        "41545258",
+        "41541956"
+      ],
+      "sources": [
+        "Clinical Guidelines"
+      ]
+    }
+  },
+  "summary_disclaimer": "This is AI-generated and not medical advice."
+}
