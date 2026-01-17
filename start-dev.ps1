@@ -13,7 +13,7 @@ $env:PYTHONPATH = "$backendPath"
 $backendProcess = Start-Process powershell -PassThru -ArgumentList `
 	"-NoExit", `
 	"-Command", `
-	".\.venv\Scripts\python.exe -m uvicorn server.main:app --host 127.0.0.1 --port 8000 --reload"
+	".\.venv\Scripts\python.exe -m uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload"
 
 Start-Sleep -Seconds 3
 
