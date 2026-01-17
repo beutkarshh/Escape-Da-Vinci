@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: prism-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: python -m uvicorn server.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.13.1
+      - key: PYTHONUNBUFFERED
+        value: true
+    autoDeploy: true
+    region: oregon
+
+  - type: static
+    name: prism-frontend
+    buildCommand: cd frontend && npm install && npm run build
+    staticPublishPath: frontend/dist
+    routes:
+      - path: /api/*
+        destination: http://prism-backend/api
+    autoDeploy: true
+    region: oregon

@@ -5,7 +5,10 @@ import { config } from '@/config'
 // Dev-auth bypass is enabled only when devAuth is true in config
 const USE_DEV_AUTH = config.devAuth
 
-const API_BASE_URL = 'http://localhost:8000'
+// Detect if running in production or development
+const API_BASE_URL = typeof window !== 'undefined' && window.location.hostname === 'localhost'
+  ? 'http://localhost:8000'
+  : '/api'
 
 const api = axios.create({
   baseURL: API_BASE_URL,
