@@ -5,8 +5,8 @@ from fastapi import FastAPI, Response
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from orchestrator.orchestrator import build_orchestrator_graph
-from utils.pdf_generator import generate_pdf_from_analysis
+from backend.orchestrator.orchestrator import build_orchestrator_graph
+from backend.utils.pdf_generator import generate_pdf_from_analysis
 
 # -------------------------------
 # Initialize FastAPI and Orchestrator
