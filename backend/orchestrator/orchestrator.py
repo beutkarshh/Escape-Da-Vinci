@@ -4,11 +4,11 @@ import json
 from langgraph.graph import StateGraph, END   # ✅ fixed import
 
 # Import agents
-from backend.agents.symptom_analyzer import symptom_analyzer_agent
-from backend.agents.literature_agent import literature_agent
-from backend.agents.case_matcher import case_matcher_agent
-from backend.agents.treatment_agent import treatment_agent
-from backend.agents.summarizer_agent import summarizer_agent   # ✅ new import
+from agents.symptom_analyzer import symptom_analyzer_agent
+from agents.literature_agent import literature_agent
+from agents.case_matcher import case_matcher_agent
+from agents.treatment_agent import treatment_agent
+from agents.summarizer_agent import summarizer_agent   # ✅ new import
 
 # -------------------------------
 # Orchestrator Graph
