@@ -12,12 +12,25 @@ from langgraph.graph import StateGraph, END
 # -------------------------------
 load_dotenv()
 
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0.2,
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1",
-)
+_llm = None
+
+
+def _get_llm():
+    global _llm
+    if _llm is not None:
+        return _llm
+
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return None
+
+    _llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.2,
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
+    return _llm
 
 # -------------------------------
 # Helpers to gather upstream outputs
@@ -149,7 +162,8 @@ def summarizer_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 
     parsed = None
     try:
-        if os.getenv("OPENROUTER_API_KEY"):
+        llm = _get_llm()
+        if llm is not None:
             chain = summary_prompt | llm
             result = chain.invoke({
                 "payload_json": json.dumps(payload, indent=2, ensure_ascii=False)

@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import { persist } from 'zustand/middleware'
 import { User, Session } from '@supabase/supabase-js'
 
 interface AppUser {
@@ -13,7 +14,7 @@ interface PatientCase {
   gender: string
   symptoms: string
   medicalHistory: string
-  currentMedications: string
+  currentMedications: string | string[] // Allow both string and array
   urgency: 'low' | 'medium' | 'high' | 'critical'
 }
 
@@ -38,7 +39,11 @@ interface AppState {
     completedCases: number
     casesAnalyzed: number
     progress: number
+    totalAnalysisTime: number // in seconds
   }
+  updateStats: (updates: Partial<AppState['stats']>) => void
+  incrementCompletedCases: () => void
+  incrementCasesAnalyzed: () => void
   
   // Case state
   currentCase: PatientCase | null
@@ -52,46 +57,66 @@ interface AppState {
   clearResults: () => void
 }
 
-export const useAppStore = create<AppState>((set) => ({
-  // Auth state
-  user: null,
-  session: null,
-  isAuthenticated: false,
-  setAuth: (user, session) => set({ user, session, isAuthenticated: !!user }),
-  clearAuth: () => set({ user: null, session: null, isAuthenticated: false }),
-  
-  // Dashboard state
-  stats: {
-    activeAgents: 5,
-    completedCases: 127,
-    casesAnalyzed: 1248,
-    progress: 78
-  },
-  
-  // Case state
-  currentCase: null,
-  setCurrentCase: (currentCase) => set({ currentCase }),
-  
-  // Analysis state
-  agentResults: [],
-  analysisInProgress: false,
-  setAnalysisInProgress: (analysisInProgress) => set({ analysisInProgress }),
-  updateAgentResult: (agentName, status, result) => set((state) => {
-    const existingIndex = state.agentResults.findIndex(ar => ar.agentName === agentName)
-    const newResult: AgentResult = {
-      agentName,
-      status,
-      result,
-      timestamp: new Date()
+export const useAppStore = create<AppState>()(
+  persist(
+    (set) => ({
+      // Auth state
+      user: null,
+      session: null,
+      isAuthenticated: false,
+      setAuth: (user, session) => set({ user, session, isAuthenticated: !!user }),
+      clearAuth: () => set({ user: null, session: null, isAuthenticated: false }),
+      
+      // Dashboard state
+      stats: {
+        activeAgents: 5,  // Total AI agents in system
+        completedCases: 0,  // Successfully completed analyses
+        casesAnalyzed: 0,  // Total analyses run
+        progress: 0,  // Current analysis progress %
+        totalAnalysisTime: 0  // Total time spent on analyses (seconds)
+      },
+      updateStats: (updates) => set((state) => ({
+        stats: { ...state.stats, ...updates }
+      })),
+      incrementCompletedCases: () => set((state) => ({
+        stats: { ...state.stats, completedCases: state.stats.completedCases + 1 }
+      })),
+      incrementCasesAnalyzed: () => set((state) => ({
+        stats: { ...state.stats, casesAnalyzed: state.stats.casesAnalyzed + 1 }
+      })),
+      
+      // Case state
+      currentCase: null,
+      setCurrentCase: (currentCase) => set({ currentCase }),
+      
+      // Analysis state
+      agentResults: [],
+      analysisInProgress: false,
+      setAnalysisInProgress: (analysisInProgress) => set({ analysisInProgress }),
+      updateAgentResult: (agentName, status, result) => set((state) => {
+        const existingIndex = state.agentResults.findIndex(ar => ar.agentName === agentName)
+        const newResult: AgentResult = {
+          agentName,
+          status,
+          result,
+          timestamp: new Date()
+        }
+        
+        if (existingIndex >= 0) {
+          const newResults = [...state.agentResults]
+          newResults[existingIndex] = newResult
+          return { agentResults: newResults }
+        } else {
+          return { agentResults: [...state.agentResults, newResult] }
+        }
+      }),
+      clearResults: () => set({ agentResults: [] })
+    }),
+    {
+      name: 'medsai-storage', // localStorage key
+      partialize: (state) => ({ 
+        stats: state.stats // Only persist stats, not auth or analysis state
+      })
     }
-    
-    if (existingIndex >= 0) {
-      const newResults = [...state.agentResults]
-      newResults[existingIndex] = newResult
-      return { agentResults: newResults }
-    } else {
-      return { agentResults: [...state.agentResults, newResult] }
-    }
-  }),
-  clearResults: () => set({ agentResults: [] })
-}))
+  )
+)

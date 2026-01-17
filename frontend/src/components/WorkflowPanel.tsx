@@ -99,15 +99,39 @@ const WorkflowPanel = () => {
 
     setAnalysisInProgress(true);
     clearResults();
+    
+    // Update progress to show analysis starting
+    const { updateStats } = useAppStore.getState();
+    updateStats({ progress: 0 });
+
+    const startTime = Date.now();
 
     try {
-      // Mark steps as running (for UI feedback)
-      for (const step of workflowSteps) {
-        updateAgentResult(step.id, 'running');
-      }
+      // Show agents activating incrementally in real-time
+      const activateAgents = async () => {
+        for (let i = 0; i < workflowSteps.length; i++) {
+          await new Promise(resolve => setTimeout(resolve, i * 300)); // 300ms between each
+          updateAgentResult(workflowSteps[i].id, 'running');
+          updateStats({ progress: Math.min(20, ((i + 1) / workflowSteps.length) * 20) });
+        }
+      };
+
+      // Start agent activation animation
+      activateAgents();
+
+      // Simulate progress while waiting for backend
+      const progressInterval = setInterval(() => {
+        const { analysisInProgress, stats } = useAppStore.getState();
+        if (analysisInProgress && stats.progress < 90) {
+          updateStats({ progress: Math.min(90, stats.progress + 2) });
+        }
+      }, 1000);
 
       // Call backend once to run the full orchestrator
       const response = await analyzePatientCase(currentCase);
+
+      // Stop progress simulation
+      clearInterval(progressInterval);
 
       // Map backend keys to frontend agent ids
       const mapping: Record<string, any> = {
@@ -118,20 +142,42 @@ const WorkflowPanel = () => {
         summary: response?.summary,
       };
 
-      // Update each agent result with real data
-      for (const step of workflowSteps) {
+      // Complete agents incrementally with visual feedback
+      for (let i = 0; i < workflowSteps.length; i++) {
+        await new Promise(resolve => setTimeout(resolve, 400)); // 400ms between completions
+        const step = workflowSteps[i];
         updateAgentResult(step.id, 'completed', mapping[step.id]);
+        const progress = ((i + 1) / workflowSteps.length) * 100;
+        updateStats({ progress });
       }
+
+      // Update stats - analysis completed successfully
+      const { incrementCompletedCases, incrementCasesAnalyzed } = useAppStore.getState();
+      const elapsedSeconds = Math.floor((Date.now() - startTime) / 1000);
+      
+      incrementCompletedCases();
+      incrementCasesAnalyzed();
+      updateStats({ 
+        progress: 100,
+        totalAnalysisTime: useAppStore.getState().stats.totalAnalysisTime + elapsedSeconds
+      });
 
       toast({
         title: "Analysis Complete",
         description: "Patient case analysis has completed.",
       });
+
     } catch (error: any) {
       // Mark steps as error
       for (const step of workflowSteps) {
         updateAgentResult(step.id, 'error', { message: error?.message || 'Request failed' });
       }
+      
+      // Still increment cases analyzed (even if failed)
+      const { incrementCasesAnalyzed, updateStats } = useAppStore.getState();
+      incrementCasesAnalyzed();
+      updateStats({ progress: 0 });
+      
       toast({
         title: "Analysis Failed",
         description: error?.message || "An error occurred during analysis.",

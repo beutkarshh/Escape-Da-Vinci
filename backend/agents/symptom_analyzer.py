@@ -13,12 +13,25 @@ load_dotenv()
 # -------------------------------
 # Define Model (LangChain wrapper for OpenRouter)
 # -------------------------------
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0.2,
-    api_key=os.getenv("OPENROUTER_API_KEY"),   # ✅ from .env
-    base_url="https://openrouter.ai/api/v1"    # ✅ OpenRouter base URL
-)
+_llm = None
+
+
+def _get_llm():
+    global _llm
+    if _llm is not None:
+        return _llm
+
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return None
+
+    _llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.2,
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
+    return _llm
 
 # -------------------------------
 # Prompt Template (with ICD-10-CM India requirement)
@@ -49,7 +62,8 @@ Return STRICT JSON only in this schema:
 def symptom_analyzer_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     """LangGraph node for Symptom Analyzer"""
     # Dev fallback when LLM key missing
-    if not os.getenv("OPENROUTER_API_KEY"):
+    llm = _get_llm()
+    if llm is None:
         state["symptom_analysis"] = {
             "top_differentials": [],
             "risk_level": "low",
@@ -84,6 +98,15 @@ def symptom_analyzer_agent(state: Dict[str, Any]) -> Dict[str, Any]:
 
     # Add output back into state
     state["symptom_analysis"] = parsed
+    
+    # Extract diagnosis for other agents to use
+    top_differentials = parsed.get("top_differentials", [])
+    if top_differentials and len(top_differentials) > 0:
+        top_diagnosis = top_differentials[0].get("name", "")
+        if top_diagnosis:
+            state["diagnosis"] = top_diagnosis
+            print(f"✅ Extracted diagnosis: {top_diagnosis}")
+    
     return state
 
 # -------------------------------

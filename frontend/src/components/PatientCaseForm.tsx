@@ -5,8 +5,9 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useAppStore } from "@/store/useAppStore";
-import { User, Calendar, Stethoscope } from "lucide-react";
+import { User, Calendar, Stethoscope, X, Plus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const PatientCaseForm = () => {
@@ -23,26 +24,95 @@ const PatientCaseForm = () => {
     urgency: currentCase?.urgency || "medium"
   });
 
+  // State for multi-input fields
+  const [symptomsList, setSymptomsList] = useState<string[]>(
+    currentCase?.symptoms ? currentCase.symptoms.split(',').map(s => s.trim()).filter(Boolean) : []
+  );
+  const [medicalHistoryList, setMedicalHistoryList] = useState<string[]>(
+    currentCase?.medicalHistory ? currentCase.medicalHistory.split(',').map(s => s.trim()).filter(Boolean) : []
+  );
+  const [medicationsList, setMedicationsList] = useState<string[]>(
+    currentCase?.currentMedications ? (
+      Array.isArray(currentCase.currentMedications) 
+        ? currentCase.currentMedications 
+        : currentCase.currentMedications.split(',').map(s => s.trim()).filter(Boolean)
+    ) : []
+  );
+
+  // Temporary input states
+  const [symptomInput, setSymptomInput] = useState("");
+  const [medicalHistoryInput, setMedicalHistoryInput] = useState("");
+  const [medicationInput, setMedicationInput] = useState("");
+
+  // Add item handlers
+  const addSymptom = () => {
+    if (symptomInput.trim()) {
+      setSymptomsList([...symptomsList, symptomInput.trim()]);
+      setSymptomInput("");
+    }
+  };
+
+  const addMedicalHistory = () => {
+    if (medicalHistoryInput.trim()) {
+      setMedicalHistoryList([...medicalHistoryList, medicalHistoryInput.trim()]);
+      setMedicalHistoryInput("");
+    }
+  };
+
+  const addMedication = () => {
+    if (medicationInput.trim()) {
+      setMedicationsList([...medicationsList, medicationInput.trim()]);
+      setMedicationInput("");
+    }
+  };
+
+  // Remove item handlers
+  const removeSymptom = (index: number) => {
+    setSymptomsList(symptomsList.filter((_, i) => i !== index));
+  };
+
+  const removeMedicalHistory = (index: number) => {
+    setMedicalHistoryList(medicalHistoryList.filter((_, i) => i !== index));
+  };
+
+  const removeMedication = (index: number) => {
+    setMedicationsList(medicationsList.filter((_, i) => i !== index));
+  };
+
+  // Handle Enter key for quick add
+  const handleKeyPress = (e: React.KeyboardEvent, addFunction: () => void) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      addFunction();
+    }
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.patientId || !formData.symptoms) {
+    if (!formData.patientId || symptomsList.length === 0) {
       toast({
         title: "Missing Information",
-        description: "Patient ID and symptoms are required.",
+        description: "Patient ID and at least one symptom are required.",
         variant: "destructive",
       });
       return;
     }
 
-    setCurrentCase({
+    // Combine lists into strings/arrays for storage
+    const caseData = {
       ...formData,
+      symptoms: symptomsList.join(', '),
+      medicalHistory: medicalHistoryList.join(', '),
+      currentMedications: medicationsList, // Keep as array
       urgency: formData.urgency as 'low' | 'medium' | 'high' | 'critical'
-    });
+    };
+
+    setCurrentCase(caseData);
 
     toast({
       title: "Case Saved",
-      description: "Patient case information has been saved successfully.",
+      description: `Patient case with ${symptomsList.length} symptom(s), ${medicationsList.length} medication(s) saved successfully.`,
     });
   };
 
@@ -106,37 +176,93 @@ const PatientCaseForm = () => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="symptoms">Symptoms *</Label>
-            <Textarea
-              id="symptoms"
-              placeholder="Describe the patient's current symptoms..."
-              value={formData.symptoms}
-              onChange={(e) => handleInputChange('symptoms', e.target.value)}
-              rows={3}
-              required
-            />
+            <Label htmlFor="symptoms">Symptoms * (Press Enter or click + to add)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="symptoms"
+                placeholder="e.g., Chest pain, Shortness of breath"
+                value={symptomInput}
+                onChange={(e) => setSymptomInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, addSymptom)}
+              />
+              <Button type="button" onClick={addSymptom} size="icon" variant="outline">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {symptomsList.map((symptom, index) => (
+                <Badge key={index} variant="secondary" className="flex items-center gap-1">
+                  {symptom}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeSymptom(index)}
+                  />
+                </Badge>
+              ))}
+            </div>
+            {symptomsList.length === 0 && (
+              <p className="text-sm text-muted-foreground">No symptoms added yet</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="medicalHistory">Medical History</Label>
-            <Textarea
-              id="medicalHistory"
-              placeholder="Previous conditions, surgeries, family history..."
-              value={formData.medicalHistory}
-              onChange={(e) => handleInputChange('medicalHistory', e.target.value)}
-              rows={2}
-            />
+            <Label htmlFor="medicalHistory">Medical History (Press Enter or click + to add)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="medicalHistory"
+                placeholder="e.g., Hypertension, Type 2 Diabetes"
+                value={medicalHistoryInput}
+                onChange={(e) => setMedicalHistoryInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, addMedicalHistory)}
+              />
+              <Button type="button" onClick={addMedicalHistory} size="icon" variant="outline">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {medicalHistoryList.map((history, index) => (
+                <Badge key={index} variant="outline" className="flex items-center gap-1">
+                  {history}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeMedicalHistory(index)}
+                  />
+                </Badge>
+              ))}
+            </div>
+            {medicalHistoryList.length === 0 && (
+              <p className="text-sm text-muted-foreground">No medical history added yet</p>
+            )}
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="currentMedications">Current Medications</Label>
-            <Textarea
-              id="currentMedications"
-              placeholder="List current medications and dosages..."
-              value={formData.currentMedications}
-              onChange={(e) => handleInputChange('currentMedications', e.target.value)}
-              rows={2}
-            />
+            <Label htmlFor="currentMedications">Current Medications (Press Enter or click + to add)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="currentMedications"
+                placeholder="e.g., Metformin 500mg, Lisinopril 10mg"
+                value={medicationInput}
+                onChange={(e) => setMedicationInput(e.target.value)}
+                onKeyPress={(e) => handleKeyPress(e, addMedication)}
+              />
+              <Button type="button" onClick={addMedication} size="icon" variant="outline">
+                <Plus className="h-4 w-4" />
+              </Button>
+            </div>
+            <div className="flex flex-wrap gap-2 mt-2">
+              {medicationsList.map((medication, index) => (
+                <Badge key={index} variant="default" className="flex items-center gap-1 bg-blue-500">
+                  {medication}
+                  <X 
+                    className="h-3 w-3 cursor-pointer hover:text-destructive" 
+                    onClick={() => removeMedication(index)}
+                  />
+                </Badge>
+              ))}
+            </div>
+            {medicationsList.length === 0 && (
+              <p className="text-sm text-muted-foreground">No medications added yet</p>
+            )}
           </div>
 
           <div className="space-y-2">

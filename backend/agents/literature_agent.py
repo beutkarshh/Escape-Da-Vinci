@@ -70,12 +70,25 @@ def fetch_pubmed_articles(query: str, max_results: int = 3):
 # -------------------------------
 # LangChain LLM Setup
 # -------------------------------
-llm = ChatOpenAI(
-    model="gpt-4o-mini",
-    temperature=0.3,
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
-)
+_llm = None
+
+
+def _get_llm():
+    global _llm
+    if _llm is not None:
+        return _llm
+
+    api_key = os.getenv("OPENROUTER_API_KEY")
+    if not api_key:
+        return None
+
+    _llm = ChatOpenAI(
+        model="gpt-4o-mini",
+        temperature=0.3,
+        api_key=api_key,
+        base_url="https://openrouter.ai/api/v1",
+    )
+    return _llm
 
 # Prompt template for summarizing PubMed abstracts
 summary_prompt = ChatPromptTemplate.from_messages([
@@ -106,23 +119,29 @@ def literature_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     current_meds = (state.get("currentMedications") or "").strip()
 
     # Construct targeted PubMed query
-    query_terms = []
+    # Use diagnosis as primary query, or symptoms if no diagnosis
+    # Don't make query too specific with AND operators - PubMed will return 0 results
+    query_parts = []
+    
     if diagnosis:
-        query_terms.append(diagnosis)
-    if symptoms:
-        query_terms.append(symptoms)
-    if gender:
-        query_terms.append(gender)
-    if age:
-        query_terms.append(f"age {age}")
-    if medical_history:
-        query_terms.append(medical_history)
-    if current_meds:
-        query_terms.append(current_meds)
+        # If we have a diagnosis, use it as the main query
+        query_parts.append(diagnosis)
+        # Add age if relevant for the condition
+        if age:
+            query_parts.append(f"age {age}")
+    else:
+        # No diagnosis yet, use symptoms
+        if symptoms:
+            query_parts.append(symptoms)
+    
+    # Join with AND for reasonable specificity (max 2-3 terms)
+    query = " AND ".join(query_parts[:3]) if query_parts else symptoms or "general medicine"
 
-    query = " AND ".join([t for t in query_terms if t]) or symptoms or diagnosis
-
+    print(f"🔍 Literature Agent Query: {query}")
+    
     articles = fetch_pubmed_articles(query)
+    
+    print(f"📚 PubMed returned {len(articles)} articles")
 
     if not articles:
         state["literature"] = {
@@ -140,7 +159,8 @@ def literature_agent(state: Dict[str, Any]) -> Dict[str, Any]:
     # If LLM unavailable or fails, provide minimal summaries from abstracts
     parsed = None
     try:
-        if os.getenv("OPENROUTER_API_KEY"):
+        llm = _get_llm()
+        if llm is not None:
             chain = summary_prompt | llm
             result = chain.invoke({"abstracts": abstracts_text})
             parsed = json.loads((result.content or "").strip())

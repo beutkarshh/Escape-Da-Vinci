@@ -10,6 +10,8 @@ import { useNavigate } from "react-router-dom";
 import { useAppStore } from "@/store/useAppStore";
 import { loginUser, signupUser, signInWithProvider } from "@/services/api";
 import { useToast } from "@/hooks/use-toast";
+import EnvDebug from '@/components/EnvDebug';
+import { config } from '@/config';
 
 const Login = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -20,6 +22,7 @@ const Login = () => {
   
   const navigate = useNavigate();
   const isAuthenticated = useAppStore((state) => state.isAuthenticated);
+  const setAuth = useAppStore((state) => state.setAuth);
   const { toast } = useToast();
 
   // Redirect if already authenticated
@@ -34,6 +37,16 @@ const Login = () => {
     setLoading(true);
 
     try {
+  // Dev-only fallback to bypass Supabase when explicitly enabled
+  const useDevBypass = config.devAuth;
+  if (useDevBypass) {
+        const displayName = name || (email?.split?.('@')?.[0] ?? 'Dev User');
+        setAuth({ id: 'dev-user-1', email: email || 'dev@local', name: displayName }, null);
+        toast({ title: 'Dev auth', description: `Signed in locally as ${displayName}.` });
+        navigate('/dashboard');
+        return;
+      }
+
       if (isLogin) {
         await loginUser(email, password);
         toast({
@@ -74,6 +87,8 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gradient-hero flex items-center justify-center p-4">
+      {/* Dev runtime env debug panel */}
+      {import.meta.env.MODE === 'development' && <EnvDebug />}
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
@@ -98,6 +113,12 @@ const Login = () => {
           </CardHeader>
           
           <CardContent className="space-y-6">
+            {/* Dev-only note (shown regardless; you can hide if not needed) */}
+            {config.devAuth && (
+              <div className="text-xs text-muted-foreground">
+                Dev auth enabled: any email/password will sign you in locally.
+              </div>
+            )}
             {/* Social Login Buttons */}
             <div className="space-y-3">
               <Button

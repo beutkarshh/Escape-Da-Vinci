@@ -67,6 +67,7 @@ const ResultsPanel = () => {
           medicalHistory: currentCase.medicalHistory,
           currentMedications: currentCase.currentMedications,
           urgency: currentCase.urgency,
+          primary_complaint: currentCase.symptoms, // Add symptoms as primary complaint
         };
       }
 
@@ -303,14 +304,32 @@ const ResultsPanel = () => {
                     <div>
                       <h4 className="font-medium mb-2">Relevant References:</h4>
                       <div className="space-y-2">
-                        {(real.articles?.summaries || real.articles || mockResults.references || []).map((ref: any, index: number) => (
-                          <div key={index} className="p-2 bg-card rounded border">
-                            <p className="font-medium text-sm">{ref.title || ref?.summary?.slice(0,60) || 'Reference'}</p>
-                            {ref.pmid && (
-                              <p className="text-xs text-muted-foreground">PMID: {ref.pmid}</p>
-                            )}
-                          </div>
-                        ))}
+                        {(() => {
+                          // Handle multiple possible structures
+                          let articles = [];
+                          if (real.articles?.summaries) {
+                            articles = real.articles.summaries;
+                          } else if (Array.isArray(real.articles)) {
+                            articles = real.articles;
+                          } else if (real.articles && typeof real.articles === 'object') {
+                            // If articles is an object with summaries property
+                            articles = Object.values(real.articles).flat();
+                          } else {
+                            articles = mockResults.references || [];
+                          }
+                          
+                          return articles.map((ref: any, index: number) => (
+                            <div key={index} className="p-2 bg-card rounded border">
+                              <p className="font-medium text-sm">{ref.title || 'Reference'}</p>
+                              {ref.pmid && (
+                                <p className="text-xs text-muted-foreground">PMID: {ref.pmid}</p>
+                              )}
+                              {ref.summary && (
+                                <p className="text-xs text-muted-foreground mt-1">{ref.summary.slice(0, 150)}...</p>
+                              )}
+                            </div>
+                          ));
+                        })()}
                       </div>
                     </div>
                   )}
@@ -337,26 +356,55 @@ const ResultsPanel = () => {
                       <div>
                         <h4 className="font-medium mb-2">Drug Treatments:</h4>
                         <div className="space-y-2">
-                          {(real.treatments || mockResults.drugOptions || []).filter((t: any) => (t.type || '').includes('drug')).map((drug: any, index: number) => (
-                            <div key={index} className="p-2 bg-card rounded border">
-                              <div className="flex justify-between items-center">
-                                <span className="font-medium text-sm">{drug.name || drug.medication}</span>
-                                {drug.source && <Badge variant="outline">{drug.source}</Badge>}
+                          {(() => {
+                            const treatments = real.treatments || mockResults.drugOptions || [];
+                            const drugTreatments = treatments.filter((t: any) => {
+                              const type = (t.type || '').toLowerCase();
+                              return type.includes('drug') || type === 'drug';
+                            });
+                            
+                            if (drugTreatments.length === 0 && treatments.length > 0) {
+                              // If no explicit drug type, show first few treatments
+                              return treatments.slice(0, 3).map((drug: any, index: number) => (
+                                <div key={index} className="p-2 bg-card rounded border">
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium text-sm">{drug.name || drug.medication}</span>
+                                    {drug.source && <Badge variant="outline">{drug.source}</Badge>}
+                                  </div>
+                                  <p className="text-xs text-muted-foreground">{drug.class || ''} {drug.rationale ? `- ${drug.rationale.slice(0, 100)}` : ''}</p>
+                                </div>
+                              ));
+                            }
+                            
+                            return drugTreatments.map((drug: any, index: number) => (
+                              <div key={index} className="p-2 bg-card rounded border">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-medium text-sm">{drug.name || drug.medication}</span>
+                                  {drug.source && <Badge variant="outline">{drug.source}</Badge>}
+                                </div>
+                                <p className="text-xs text-muted-foreground">{drug.class || ''} {drug.rationale ? `- ${drug.rationale.slice(0, 100)}` : ''}</p>
                               </div>
-                              <p className="text-xs text-muted-foreground">{drug.class || ''} {drug.rationale ? `- ${drug.rationale}` : ''}</p>
-                            </div>
-                          ))}
+                            ));
+                          })()}
                         </div>
                       </div>
                       <div>
                         <h4 className="font-medium mb-2">Non-Drug Options:</h4>
                         <ul className="space-y-1 text-sm text-muted-foreground">
-                          {(real.treatments || mockResults.nonDrugOptions || []).filter((t: any) => (t.type || '').includes('non-drug')).map((option: any, index: number) => (
-                            <li key={index} className="flex items-start space-x-2">
-                              <span className="text-primary">•</span>
-                              <span>{option.name || option}</span>
-                            </li>
-                          ))}
+                          {(() => {
+                            const treatments = real.treatments || mockResults.nonDrugOptions || [];
+                            const nonDrugTreatments = treatments.filter((t: any) => {
+                              const type = (t.type || '').toLowerCase();
+                              return type.includes('non-drug') || type === 'non-drug';
+                            });
+                            
+                            return nonDrugTreatments.map((option: any, index: number) => (
+                              <li key={index} className="flex items-start space-x-2">
+                                <span className="text-primary">•</span>
+                                <span>{option.name || option.rationale || option}</span>
+                              </li>
+                            ));
+                          })()}
                         </ul>
                       </div>
                     </>
@@ -365,31 +413,43 @@ const ResultsPanel = () => {
                   {result.agentName === 'summary' && (
                     <>
                       <div>
-                        <h4 className="font-medium mb-2">Key Findings:</h4>
-                        <ul className="space-y-1 text-sm text-muted-foreground">
-                          {(real.patient_summary ? [real.patient_summary, real.clinical_summary] : mockResults.keyFindings || []).map((finding: string, index: number) => (
-                            <li key={index} className="flex items-start space-x-2">
-                              <span className="text-primary">•</span>
-                              <span>{finding}</span>
-                            </li>
-                          ))}
-                        </ul>
+                        <h4 className="font-medium mb-2">Patient Summary:</h4>
+                        <div className="p-3 bg-card rounded border text-sm">
+                          {real.patient_summary || mockResults.keyFindings?.[0] || 'No summary available'}
+                        </div>
+                      </div>
+                      <div>
+                        <h4 className="font-medium mb-2">Clinical Summary:</h4>
+                        <div className="p-3 bg-card rounded border text-sm">
+                          {real.clinical_summary || mockResults.keyFindings?.[1] || 'No clinical summary available'}
+                        </div>
                       </div>
                       <div>
                         <h4 className="font-medium mb-2">Recommendations:</h4>
                         <ul className="space-y-1 text-sm text-muted-foreground">
                           {(real.recommendations || mockResults.recommendations || []).map((rec: any, index: number) => (
                             <li key={index} className="flex items-start space-x-2">
-                              <span className="text-secondary">•</span>
+                              <span className="text-secondary">→</span>
                               <span>{typeof rec === 'string' ? rec : rec.content}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
-                      <div className="p-3 bg-primary/10 rounded border border-primary/20">
-                        <h4 className="font-medium text-primary mb-1">Risk Assessment:</h4>
-                        <p className="text-sm">{real?.patient_summary ? 'See summaries above' : mockResults.riskAssessment}</p>
-                      </div>
+                      {real.citations && (real.citations.pmids?.length > 0 || real.citations.sources?.length > 0) && (
+                        <div className="p-3 bg-muted/30 rounded border">
+                          <h4 className="font-medium mb-1 text-sm">Citations:</h4>
+                          {real.citations.pmids?.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              PMIDs: {real.citations.pmids.join(', ')}
+                            </p>
+                          )}
+                          {real.citations.sources?.length > 0 && (
+                            <p className="text-xs text-muted-foreground">
+                              Sources: {real.citations.sources.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      )}
                     </>
                   )}
                   

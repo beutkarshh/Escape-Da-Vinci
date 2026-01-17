@@ -1,6 +1,33 @@
 # GDHS_dev_dynamos
 
 ## 🩺 GDHS Dev Dynamos – Multi‑Agent Medical AI
+## ⚡ Quick Start
+
+Backend (FastAPI):
+```powershell
+python -m venv .venv; .\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+copy .env.example .env  # then edit with your keys (Windows) OR manually create
+uvicorn server.main:app --reload
+```
+Visit: http://localhost:8000
+
+Frontend (Vite React):
+```powershell
+cd frontend
+copy .env.example .env  # only if using Supabase auth
+npm install
+npm run dev
+```
+Visit: http://localhost:5173 (or the port shown)
+
+PDF generation: Use the UI download button or POST to `/generate-pdf` with analysis JSON.
+
+Environment safety:
+- The provided `.env.example` uses placeholders. Never commit real secrets.
+- If any real keys were exposed (e.g. shared in chats), rotate them immediately.
+
+---
 
 Built for the Global Digital Health Summit Hackathon 🏆. This repository contains a full‑stack, multi‑agent medical reasoning system:
 
